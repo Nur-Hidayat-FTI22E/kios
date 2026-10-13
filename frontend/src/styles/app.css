@@ -1,0 +1,189 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(8px, 2vw, 20px);
+  width: 100%;
+}
+
+/* ===== Navigasi modern: topbar ringkas + bar taut pendek (desktop) / tab bawah (HP) ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.topbar .brand {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.topbar .user-chip {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 34vw;
+}
+.topbar button { flex: 0 0 auto; padding: 8px 14px; min-height: 38px; }
+
+.desknav { display: none; }
+.tabbar { display: none; }
+
+/* Desktop/tablet lebar: bar taut pendek satu-dua baris, tidak memanjang ke samping */
+@media (min-width: 900px) {
+  .desknav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    border-radius: var(--radius);
+    box-shadow: var(--raised);
+    background: var(--bg);
+    margin-bottom: 16px;
+  }
+  .desknav a {
+    padding: 8px 14px;
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .desknav a.active { box-shadow: var(--inset); color: var(--accent); font-weight: 600; }
+  .content { padding-bottom: 40px; }
+}
+
+/* HP/tablet sempit: tab tetap di bawah, ikon + label kecil, bisa digeser */
+@media (max-width: 899px) {
+  .tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    gap: 2px;
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    box-shadow: 0 -4px 14px var(--shadow-dark);
+    border-top: 1px solid var(--line);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabbar::-webkit-scrollbar { display: none; }
+  .tabbar a {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 62px;
+    min-height: 54px;
+    padding: 6px 8px;
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .tabbar a .ico { font-size: 20px; line-height: 1; }
+  .tabbar a .lbl { font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .tabbar a.active { box-shadow: var(--inset); color: var(--accent); }
+  .content { padding-bottom: 84px; } /* ruang untuk tab bawah */
+}
+
+h1, h2, h3 { overflow-wrap: anywhere; }
+h1 { font-size: clamp(20px, 5vw, 26px); }
+h2 { font-size: clamp(18px, 4.5vw, 24px); }
+
+/* Responsivitas umum: layar tabel & grid menyesuaikan lebar yang ada */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px; }
+.grid-2 > * { min-width: 0; } /* item grid boleh menyusut di bawah min-content agar isi tidak keluar kartu */
+.grid-2:has(> *:only-child) { grid-template-columns: 1fr; }
+
+.pos-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+@media (min-width: 900px) { .pos-grid { grid-template-columns: 1.2fr 1fr; } }
+
+.fav-row { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: thin; }
+.fav-btn { white-space: nowrap; font-weight: 600; }
+
+.search-big { width: 100%; max-width: 100%; font-size: 18px; }
+
+/* Keranjang: nama bisa panjang, dipotong dengan elipsis; baris tetap dalam kartu */
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.cart-item > div[style] { min-width: 0; }
+.cart-item .qty { display: flex; align-items: center; gap: 6px; }
+.cart-item button { min-height: 36px; min-width: 36px; padding: 4px 10px; }
+.cart-item [style*="width: 110"], .cart-item [style*="width:110"] { width: auto !important; max-width: 110px; }
+
+.total-bar { font-size: clamp(22px, 6vw, 26px); font-weight: 700; margin: 12px 0; overflow-wrap: anywhere; }
+.method-row { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+.method-row button { flex: 1 1 100px; font-weight: 600; min-height: 48px; }
+.method-row .selected { box-shadow: var(--inset); color: var(--accent); }
+.quickcash-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.quickcash-row button { flex: 1 1 80px; min-width: 0; }
+
+/* Tabel: dibungkus .table-wrap agar bisa digeser di dalam kartu, bukan memindahkan halaman */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  margin: 6px 0;
+}
+table.lb {
+  width: 100%;
+  min-width: 520px;   /* kolom tetap terbaca; lebar kurang → geser di dalam .table-wrap */
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table.lb th, table.lb td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+table.lb th { white-space: nowrap; }
+
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px; }
+.stat-cards .card h3 { margin: 0 0 6px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.stat-cards .card .val { font-size: clamp(18px, 5vw, 22px); font-weight: 700; overflow-wrap: anywhere; }
+
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions button { min-height: 40px; padding: 6px 12px; }
+
+/* Grafik mengikuti tema (kelas CSS menimpa atribut stroke/fill di SVG Recharts) */
+.chart-omzet { stroke: var(--accent); }
+.chart-laba { fill: var(--success); }
+
+/* Sumbu grafik: default Recharts #666 hardcode → ikut tema */
+.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line { stroke: var(--text-muted); }
+.recharts-cartesian-axis-tick-value { fill: var(--text-muted); }
+
+/* Dot grafik (titik tunggal tren) & tooltip default Recharts: ikut tema */
+.recharts-line-dot { fill: var(--accent); }
+.recharts-default-tooltip {
+  background: var(--bg) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  color: var(--text) !important;
+  box-shadow: var(--raised);
+}
+
+/* Form berjejer: input flex:1 + tombol tidak saling mendorong keluar kartu */
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.form-row > * { min-width: 0; }
+
+@media (max-width: 400px) {
+  .app-shell { padding: 8px; }
+  .card { padding: 12px; }
+}

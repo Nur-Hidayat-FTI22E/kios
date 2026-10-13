@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: kiosroot
+      MYSQL_DATABASE: kios
+      MYSQL_USER: kios
+      MYSQL_PASSWORD: kiospass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ukios", "-pkiospass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DB_DSN: "kios:kiospass@tcp(db:3306)/kios?parseTime=true&multiStatements=true"
+      JWT_SECRET: dev-secret-ganti-di-produksi
+      APP_TZ: Asia/Makassar
+      ALLOWED_ORIGIN: http://localhost:5173
+      PORT: "8080"
+      SEED_OWNER_PASSWORD: admin123
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE: http://localhost:8080/api/v1
+    depends_on:
+      - api
+
+volumes:
+  db_data:

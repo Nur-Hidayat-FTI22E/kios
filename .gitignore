@@ -1,0 +1,8 @@
+# Rahasia produksi
+.env
+
+# Backup dev
+.backup/
+
+# Node
+frontend/node_modules/

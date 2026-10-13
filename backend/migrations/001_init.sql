@@ -1,0 +1,200 @@
+-- 001_init.sql — skema awal v0.1 sesuai SDD bagian 8. Semua uang BIGINT rupiah (D-05).
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL,
+  username VARCHAR(64) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  peran ENUM('pemilik','kasir') NOT NULL,
+  aktif TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS settings (
+  kunci VARCHAR(64) PRIMARY KEY,
+  nilai TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(200) NOT NULL,
+  category_id BIGINT UNSIGNED NULL,
+  satuan VARCHAR(32) NOT NULL DEFAULT 'pcs',
+  harga_beli BIGINT NOT NULL DEFAULT 0,
+  harga_jual BIGINT NOT NULL DEFAULT 0,
+  stok BIGINT NOT NULL DEFAULT 0,
+  stok_minimum BIGINT NOT NULL DEFAULT 0,
+  favorit TINYINT(1) NOT NULL DEFAULT 0,
+  aktif TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id),
+  INDEX idx_products_nama (nama)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_id BIGINT UNSIGNED NOT NULL,
+  jenis ENUM('awal','masuk','keluar','koreksi','batal') NOT NULL,
+  jumlah BIGINT NOT NULL,
+  referensi_tipe VARCHAR(32) NOT NULL DEFAULT '',
+  referensi_id BIGINT NOT NULL DEFAULT 0,
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sm_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT fk_sm_user FOREIGN KEY (user_id) REFERENCES users(id),
+  INDEX idx_sm_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS customers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL,
+  telepon VARCHAR(32) NOT NULL DEFAULT '',
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL,
+  telepon VARCHAR(32) NOT NULL DEFAULT '',
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS sales (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nomor VARCHAR(32) NOT NULL UNIQUE,
+  customer_id BIGINT UNSIGNED NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  total BIGINT NOT NULL,
+  diskon BIGINT NOT NULL DEFAULT 0,
+  metode ENUM('tunai','qris','kasbon') NOT NULL,
+  dibayar BIGINT NOT NULL DEFAULT 0,
+  status ENUM('selesai','batal') NOT NULL DEFAULT 'selesai',
+  alasan_batal VARCHAR(255) NOT NULL DEFAULT '',
+  idempotency_key VARCHAR(64) NULL UNIQUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sales_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT fk_sales_user FOREIGN KEY (user_id) REFERENCES users(id),
+  INDEX idx_sales_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS sale_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sale_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  jumlah INT NOT NULL,
+  harga_jual BIGINT NOT NULL,
+  harga_beli BIGINT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_si_sale FOREIGN KEY (sale_id) REFERENCES sales(id),
+  CONSTRAINT fk_si_product FOREIGN KEY (product_id) REFERENCES products(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  supplier_id BIGINT UNSIGNED NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  total BIGINT NOT NULL,
+  dibayar BIGINT NOT NULL DEFAULT 0,
+  metode_bayar ENUM('tunai','non_tunai') NOT NULL DEFAULT 'tunai',
+  status ENUM('selesai','batal') NOT NULL DEFAULT 'selesai',
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_pur_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+  CONSTRAINT fk_pur_user FOREIGN KEY (user_id) REFERENCES users(id),
+  INDEX idx_pur_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS purchase_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  purchase_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  jumlah INT NOT NULL,
+  harga_beli BIGINT NOT NULL,
+  CONSTRAINT fk_pi_purchase FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+  CONSTRAINT fk_pi_product FOREIGN KEY (product_id) REFERENCES products(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS debts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  tipe ENUM('pelanggan','supplier') NOT NULL,
+  customer_id BIGINT UNSIGNED NULL,
+  supplier_id BIGINT UNSIGNED NULL,
+  sale_id BIGINT UNSIGNED NULL,
+  purchase_id BIGINT UNSIGNED NULL,
+  jumlah BIGINT NOT NULL,
+  terbayar BIGINT NOT NULL DEFAULT 0,
+  jatuh_tempo DATE NULL,
+  lunas TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('aktif','batal') NOT NULL DEFAULT 'aktif',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_debt_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
+  CONSTRAINT fk_debt_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+  CONSTRAINT fk_debt_sale FOREIGN KEY (sale_id) REFERENCES sales(id),
+  CONSTRAINT fk_debt_purchase FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+  INDEX idx_debt_status (tipe, status, lunas)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  debt_id BIGINT UNSIGNED NOT NULL,
+  jumlah BIGINT NOT NULL,
+  metode ENUM('tunai','qris','transfer') NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  dibatalkan TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dp_debt FOREIGN KEY (debt_id) REFERENCES debts(id),
+  CONSTRAINT fk_dp_user FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS expense_categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS expenses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  tanggal DATE NOT NULL,
+  expense_category_id BIGINT UNSIGNED NOT NULL,
+  jumlah BIGINT NOT NULL,
+  metode ENUM('tunai','non_tunai') NOT NULL,
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_exp_cat FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id),
+  CONSTRAINT fk_exp_user FOREIGN KEY (user_id) REFERENCES users(id),
+  INDEX idx_exp_tanggal (tanggal)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cash_closings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  tanggal DATE NOT NULL UNIQUE,
+  modal_awal BIGINT NOT NULL DEFAULT 0,
+  kas_sistem BIGINT NOT NULL DEFAULT 0,
+  kas_fisik BIGINT NOT NULL DEFAULT 0,
+  selisih BIGINT NOT NULL DEFAULT 0,
+  catatan VARCHAR(255) NOT NULL DEFAULT '',
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NULL,
+  aksi VARCHAR(64) NOT NULL,
+  entitas VARCHAR(64) NOT NULL,
+  entitas_id BIGINT NOT NULL DEFAULT 0,
+  data_sebelum TEXT NULL,
+  data_sesudah TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit (entitas, entitas_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;

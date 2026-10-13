@@ -1,0 +1,105 @@
+:root {
+  --bg: #e6e9ef;
+  --line: rgba(0, 0, 0, 0.06);   /* garis pembatas tipis yang terlihat di kedua tema */
+  --shadow-light: #ffffff;
+  --shadow-dark: #c3c8d4;
+  --radius: 16px;
+  --text: #1f2937;        /* kontras tinggi di atas --bg */
+  --text-muted: #4b5563;
+  --accent: #2563eb;      /* aksi utama */
+  --accent-text: #ffffff;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --raised: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  --inset: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+}
+
+[data-theme="dark"] {
+  --bg: #23262d;
+  --line: rgba(255, 255, 255, 0.09); /* garis pembatas terlihat di latar gelap */
+  --shadow-light: #35393f;
+  --shadow-dark: #14161a;
+  --text: #f3f4f6;
+  --text-muted: #d1d5db;  /* teks redup tetap terbaca (bagian 12.3) */
+  --accent: #60a5fa;
+  --accent-text: #10151f;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+
+/* Perbaikan overflow: ukuran kotak (box-sizing) seragam agar width:100% + padding tidak menembus layar */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Teks tidak boleh memakai warna lebih redup dari --text-muted di atas --bg */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0;
+  min-height: 100vh;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden; /* jaring pengaman: halaman tidak pernah bergeser ke samping */
+}
+
+.card {
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--raised);
+  padding: 16px;
+  overflow-wrap: anywhere; /* nama/kata sangat panjang tetap dibungkus, tidak keluar kartu */
+  min-width: 0;
+}
+
+input, select, textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: none;
+  border-radius: 12px;
+  box-shadow: var(--inset);
+  padding: 10px 14px;
+  min-height: 44px;           /* target sentuh ≥ 44 px (NFR-05) */
+  font-size: 15px;
+  outline: none;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 3px solid var(--accent); /* fokus terlihat jelas (bagian 12.3) */
+  outline-offset: 2px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: var(--raised);
+  padding: 10px 16px;
+  min-height: 44px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:active {
+  box-shadow: var(--inset);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.btn-danger { color: var(--danger); }
+.btn-success { color: var(--success); }
+
+.muted { color: var(--text-muted); }
+.danger-text { color: var(--danger); font-weight: 600; }
+.success-text { color: var(--success); font-weight: 600; }
+.warning-text { color: var(--warning); font-weight: 600; }
